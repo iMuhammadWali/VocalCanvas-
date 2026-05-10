@@ -1,0 +1,56 @@
+# Audio files
+voices/
+*.wav
+*.mp3
+*.webm
+*.m4a
+
+# Spectrograms
+spectrograms/
+
+# Trained models
+models/
+*.h5
+*.pkl
+*.keras
+
+# Dataset numpy arrays
+data/
+*.npy
+*.npz
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+
+# Virtual environment
+venv/
+env/
+.venv/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# IDE
+.vscode/
+.idea/
+*.suo
+*.user
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs
+*.log
+logs/
+
+# Environment variables
+.env
