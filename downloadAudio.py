@@ -1,10 +1,9 @@
 import yt_dlp
 import os
 
-# Add your URLs and VA names here
 downloads = [
-    {"url": "https://youtu.be/E0ScLiT6-HM?si=7pGHchsvcNpQVB9o", "name": "nanami"},
-    {"url": "https://youtu.be/TJPGuy-vO6Q?si=I3gb5dBzakpP5iiT", "name": "gojo"},
+    {"url": "https://youtu.be/fOpM_qtgJlM?si=Q-t78DE0tRj3mO_B", "name": "yuichi_nakamura"},
+    # {"url": "https://youtu.be/TJPGuy-vO6Q?si=I3gb5dBzakpP5iiT", "name": "gojo"},
 ]
 
 for item in downloads:
