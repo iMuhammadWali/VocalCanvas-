@@ -7,7 +7,7 @@ import subprocess
 
 # Config
 MODEL_PATH = "models/vocalcanvas_sanity.keras"
-SPEAKERS = ["Kenjiro Tsuda", "Yuichi Nakamura"]
+SPEAKERS = ["abi", "kenjiro_tsuda", "megumi_hayashibara"]
 CHUNK_DURATION = 3
 SAMPLE_RATE = 22050
 N_MELS = 128
@@ -43,7 +43,12 @@ def predict_file(audio_path, model):
 
     print(f"\nLoading audio: {audio_path}")
     audio, sr = librosa.load(audio_path, sr=SAMPLE_RATE)
-    audio = audio / (np.max(np.abs(audio)) + 1e-9)
+    # Boost quiet audio
+    max_amp = np.max(np.abs(audio))
+    if max_amp < 0.1:  # if audio is very quiet
+        audio = audio / (max_amp + 1e-9)  # normalize to full volume
+        print("  (Audio boosted — original was very quiet)")
+    # audio = audio / (np.max(np.abs(audio)) + 1e-9)
 
     chunk_samples = CHUNK_DURATION * SAMPLE_RATE
     chunks = [audio[i:i+chunk_samples]
@@ -55,9 +60,12 @@ def predict_file(audio_path, model):
     confidences = []
 
     for idx, chunk in enumerate(chunks):
-        if np.max(np.abs(chunk)) < 0.01:
+    # Skip silent chunks
+        if np.max(np.abs(chunk)) < 0.02:
+            print(f"  Chunk {idx:03d}: SKIPPED (silence)")
             continue
-
+    
+    # rest of your existing code below...
         spec = audio_to_spectrogram(chunk)
         spec = spec[np.newaxis, ..., np.newaxis]
 

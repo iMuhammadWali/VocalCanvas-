@@ -151,7 +151,7 @@ from tensorflow.keras import layers, models, Input
 
 # Config
 SPECTROGRAMS_DIR = "spectrograms"
-SPEAKERS = ["nanami", "gojo"]
+SPEAKERS = ["abi", "kenjiro_tsuda", "megumi_hayashibara"]
 MODEL_SAVE_PATH = "models/vocalcanvas_sanity.keras"
 os.makedirs("models", exist_ok=True)
 
