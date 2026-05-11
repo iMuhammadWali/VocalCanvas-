@@ -19,6 +19,8 @@ audioread>=3.0.0
 resampy>=0.4.2
 
 opencv-python
+streamlit
+pandas
 
 # use this command to install ffmpeg from winget as its system package not pip
 # winget install ffmpeg
