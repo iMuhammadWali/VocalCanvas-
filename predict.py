@@ -4,7 +4,9 @@ import tensorflow as tf
 import sys
 import os
 import subprocess
-import cv2
+from audio_processor import UnifiedAudioProcessor
+
+PROC = UnifiedAudioProcessor()
 
 # =========================================================
 # Config
@@ -16,11 +18,11 @@ SPEAKERS = [
     "zoha"
 ]
 
-CHUNK_DURATION = 3
-SAMPLE_RATE = 22050
-N_MELS = 128
-
-IMG_SIZE = 128
+# DSP parameters come from UnifiedAudioProcessor
+CHUNK_DURATION = PROC.CHUNK_DURATION
+SAMPLE_RATE    = PROC.SAMPLE_RATE
+N_MELS         = PROC.N_MELS
+IMG_SIZE       = PROC.IMG_SIZE
 
 # =========================================================
 # Load Model
@@ -73,49 +75,14 @@ def convert_to_wav(input_path):
     return output_path
 
 # =========================================================
-# Audio -> Spectrogram Image
+# Audio -> Spectrogram (delegated to UnifiedAudioProcessor)
 # =========================================================
 def audio_to_spectrogram(chunk):
-
-    mel = librosa.feature.melspectrogram(
-
-        y=chunk,
-        sr=SAMPLE_RATE,
-        n_mels=N_MELS
-
-    )
-
-    mel_db = librosa.power_to_db(
-        mel,
-        ref=np.max
-    )
-
-    # Normalize 0-1
-    mel_norm = (
-
-        (mel_db - mel_db.min()) /
-
-        (mel_db.max() - mel_db.min() + 1e-9)
-
-    )
-
-    # Convert to image
-    mel_img = (
-        mel_norm * 255
-    ).astype(np.uint8)
-
-    # Resize to match training
-    mel_img = cv2.resize(
-        mel_img,
-        (IMG_SIZE, IMG_SIZE)
-    )
-
-    # Normalize again
-    mel_img = (
-        mel_img.astype(np.float32) / 255.0
-    )
-
-    return mel_img
+    """
+    Returns (IMG_SIZE, IMG_SIZE, 1) float32 [0, 1].
+    Identical pipeline to preprocess.py via UnifiedAudioProcessor.
+    """
+    return PROC.chunk_to_spectrogram(chunk)
 
 # =========================================================
 # Predict
@@ -145,19 +112,11 @@ def predict_file(audio_path, model):
     )
 
     # =====================================================
-    # Boost quiet audio
+    # NOTE: No amplitude boost.
+    # Training data was NOT boosted, so we must not boost
+    # here either. Quiet audio is handled naturally by the
+    # local min-max normalization inside audio_to_spectrogram.
     # =====================================================
-    max_amp = np.max(np.abs(audio))
-
-    if max_amp < 0.1:
-
-        audio = audio / (
-            max_amp + 1e-9
-        )
-
-        print(
-            "  (Audio boosted — original was very quiet)"
-        )
 
     # =====================================================
     # Split into chunks
@@ -194,8 +153,8 @@ def predict_file(audio_path, model):
     # =====================================================
     for idx, chunk in enumerate(chunks):
 
-        # Skip silence
-        if np.max(np.abs(chunk)) < 0.02:
+        # Skip silence (unified threshold via PROC)
+        if PROC.is_silent(chunk):
 
             print(
                 f"  Chunk {idx:03d}: "

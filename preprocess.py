@@ -1,20 +1,25 @@
-import librosa
-import librosa.display
 import numpy as np
 import os
 import subprocess
 import shutil
-import matplotlib.pyplot as plt
+from PIL import Image
+import librosa
 
 from sklearn.model_selection import train_test_split
+from audio_processor import UnifiedAudioProcessor
 
 VOICES_DIR = "voices"
 OUTPUT_DIR = "spectrograms"
 TEMP_WAV_DIR = "temp_wavs"
 
-CHUNK_DURATION = 3
-SAMPLE_RATE = 22050
-N_MELS = 128
+# =========================================
+# Single source of truth for DSP params
+# =========================================
+PROC = UnifiedAudioProcessor()
+
+CHUNK_DURATION = PROC.CHUNK_DURATION
+SAMPLE_RATE    = PROC.SAMPLE_RATE
+N_MELS         = PROC.N_MELS
 
 # =========================================
 # Supported formats
@@ -103,50 +108,23 @@ def augment_audio(chunk, sr):
     return augmented
 
 # =========================================
-# Create mel spectrogram
+# Create + save spectrogram image
+# Uses UnifiedAudioProcessor so the output
+# is pixel-identical to what predict.py sees
 # =========================================
-def chunk_to_mel(chunk):
+def save_spectrogram_image(chunk, output_path):
+    """
+    Convert an audio chunk to a normalized spectrogram and save as PNG.
+    Uses the same pipeline as UnifiedAudioProcessor.chunk_to_spectrogram()
+    so training images are identical to inference images.
+    """
+    # Returns (IMG_SIZE, IMG_SIZE, 1) float32 [0, 1]
+    spec = PROC.chunk_to_spectrogram(chunk)
 
-    mel = librosa.feature.melspectrogram(
-        y=chunk,
-        sr=SAMPLE_RATE,
-        n_mels=N_MELS
-    )
-
-    mel_db = librosa.power_to_db(
-        mel,
-        ref=np.max
-    )
-
-    return mel_db
-
-# =========================================
-# Save spectrogram image
-# =========================================
-def save_spectrogram_image(mel_db, output_path):
-
-    plt.figure(figsize=(3, 3))
-
-    librosa.display.specshow(
-        mel_db,
-        sr=SAMPLE_RATE,
-        x_axis=None,
-        y_axis=None
-    )
-
-    plt.axis("off")
-
-    plt.tight_layout(
-        pad=0
-    )
-
-    plt.savefig(
-        output_path,
-        bbox_inches="tight",
-        pad_inches=0
-    )
-
-    plt.close()
+    # Convert [0,1] float → [0,255] uint8 for PNG
+    img_array = (spec[:, :, 0] * 255).astype(np.uint8)
+    pil_img = Image.fromarray(img_array, mode='L')  # grayscale
+    pil_img.save(output_path)
 
 # =========================================
 # Process speaker
@@ -256,11 +234,10 @@ def process_speaker(speaker_name):
             )
         ]
 
-        # Remove silent chunks
+        # Remove silent chunks (unified threshold)
         chunks = [
-
             c for c in chunks
-            if np.max(np.abs(c)) >= 0.01
+            if not PROC.is_silent(c)
         ]
 
         all_chunks.extend(chunks)
@@ -335,17 +312,13 @@ def process_speaker(speaker_name):
                 if len(aug_chunk) < chunk_samples:
                     continue
 
-                mel_db = chunk_to_mel(
-                    aug_chunk
-                )
-
                 out_path = os.path.join(
                     out_dir,
                     f"chunk_{idx:05d}_aug{aug_idx}.png"
                 )
 
                 save_spectrogram_image(
-                    mel_db,
+                    aug_chunk,
                     out_path
                 )
 
