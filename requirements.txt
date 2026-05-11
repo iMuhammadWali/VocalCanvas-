@@ -1,0 +1,24 @@
+# VocalCanvas - Speaker Recognition Pipeline
+# Core ML / Audio
+tensorflow>=2.13.0
+librosa>=0.10.0
+numpy>=1.24.0
+
+# Data / ML utilities
+scikit-learn>=1.3.0
+
+# Visualization
+matplotlib>=3.7.0
+
+# Audio downloading
+yt-dlp>=2024.1.0
+
+# librosa dependencies (usually pulled in, but pinning for safety)
+soundfile>=0.12.1
+audioread>=3.0.0
+resampy>=0.4.2
+
+opencv-python
+
+# use this command to install ffmpeg from winget as its system package not pip
+# winget install ffmpeg

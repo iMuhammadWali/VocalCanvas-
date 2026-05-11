@@ -1,9 +1,9 @@
 # Audio files
 # voices/
-# *.wav
-# *.mp3
-# *.webm
-# *.m4a
+*.wav
+*.mp3
+*.webm
+*.m4a
 
 voices_depreciated/
 *.wav
@@ -60,3 +60,7 @@ logs/
 
 # Environment variables
 .env
+
+voices/*
+
+*.mp4
