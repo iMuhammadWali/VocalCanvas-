@@ -1,8 +1,11 @@
 import librosa
+import librosa.display
 import numpy as np
 import os
 import subprocess
 import shutil
+import matplotlib.pyplot as plt
+
 from sklearn.model_selection import train_test_split
 
 VOICES_DIR = "voices"
@@ -13,9 +16,8 @@ CHUNK_DURATION = 3
 SAMPLE_RATE = 22050
 N_MELS = 128
 
-
 # =========================================
-# Convert any audio/video file to WAV
+# Supported formats
 # =========================================
 SUPPORTED_EXTENSIONS = (
     ".wav",
@@ -32,17 +34,16 @@ SUPPORTED_EXTENSIONS = (
     ".mkv"
 )
 
-
+# =========================================
+# Convert to wav using ffmpeg
+# =========================================
 def convert_to_wav(input_path, output_path):
-    """
-    Uses ffmpeg to convert audio/video files to wav.
-    """
 
     command = [
         "ffmpeg",
-        "-y",                 # overwrite existing
-        "-i", input_path,     # input file
-        "-ac", "1",           # mono audio
+        "-y",
+        "-i", input_path,
+        "-ac", "1",
         "-ar", str(SAMPLE_RATE),
         output_path
     ]
@@ -54,11 +55,11 @@ def convert_to_wav(input_path, output_path):
         check=True
     )
 
-
 # =========================================
 # Audio augmentation
 # =========================================
 def augment_audio(chunk, sr):
+
     augmented = [chunk]
 
     augmented.append(
@@ -91,16 +92,21 @@ def augment_audio(chunk, sr):
         )
     )
 
-    noise = np.random.normal(0, 0.005, chunk.shape)
+    noise = np.random.normal(
+        0,
+        0.005,
+        chunk.shape
+    )
+
     augmented.append(chunk + noise)
 
     return augmented
 
+# =========================================
+# Create mel spectrogram
+# =========================================
+def chunk_to_mel(chunk):
 
-# =========================================
-# Convert chunk to mel spectrogram
-# =========================================
-def chunk_to_spectrogram(chunk):
     mel = librosa.feature.melspectrogram(
         y=chunk,
         sr=SAMPLE_RATE,
@@ -112,22 +118,41 @@ def chunk_to_spectrogram(chunk):
         ref=np.max
     )
 
-    denom = mel_db.max() - mel_db.min()
-
-    if denom == 0:
-        mel_norm = np.zeros_like(mel_db)
-    else:
-        mel_norm = (
-            (mel_db - mel_db.min()) / denom
-        )
-
-    return mel_norm
-
+    return mel_db
 
 # =========================================
-# Process one speaker
+# Save spectrogram image
+# =========================================
+def save_spectrogram_image(mel_db, output_path):
+
+    plt.figure(figsize=(3, 3))
+
+    librosa.display.specshow(
+        mel_db,
+        sr=SAMPLE_RATE,
+        x_axis=None,
+        y_axis=None
+    )
+
+    plt.axis("off")
+
+    plt.tight_layout(
+        pad=0
+    )
+
+    plt.savefig(
+        output_path,
+        bbox_inches="tight",
+        pad_inches=0
+    )
+
+    plt.close()
+
+# =========================================
+# Process speaker
 # =========================================
 def process_speaker(speaker_name):
+
     print(f"\nProcessing {speaker_name}...")
 
     speaker_dir = os.path.join(
@@ -140,14 +165,19 @@ def process_speaker(speaker_name):
         speaker_name
     )
 
-    os.makedirs(temp_speaker_dir, exist_ok=True)
+    os.makedirs(
+        temp_speaker_dir,
+        exist_ok=True
+    )
 
     # =====================================
-    # Convert all supported files to wav
+    # Convert files to wav
     # =====================================
     converted_wavs = []
 
-    files = sorted(os.listdir(speaker_dir))
+    files = sorted(
+        os.listdir(speaker_dir)
+    )
 
     for file_name in files:
 
@@ -167,17 +197,26 @@ def process_speaker(speaker_name):
         )
 
         try:
-            print(f"  Converting {file_name} -> wav")
+
+            print(
+                f"  Converting {file_name} -> wav"
+            )
 
             convert_to_wav(
                 input_path,
                 output_wav
             )
 
-            converted_wavs.append(output_wav)
+            converted_wavs.append(
+                output_wav
+            )
 
         except Exception as e:
-            print(f"  Failed converting {file_name}")
+
+            print(
+                f"  Failed converting {file_name}"
+            )
+
             print(f"  Error: {e}")
 
     if not converted_wavs:
@@ -187,11 +226,13 @@ def process_speaker(speaker_name):
     all_chunks = []
 
     # =====================================
-    # Load wav files
+    # Load wavs and chunk them
     # =====================================
     for wav_path in converted_wavs:
 
-        wav_file = os.path.basename(wav_path)
+        wav_file = os.path.basename(
+            wav_path
+        )
 
         print(f"  Loading {wav_file}...")
 
@@ -205,7 +246,9 @@ def process_speaker(speaker_name):
         )
 
         chunks = [
+
             audio[i:i + chunk_samples]
+
             for i in range(
                 0,
                 len(audio) - chunk_samples,
@@ -215,18 +258,23 @@ def process_speaker(speaker_name):
 
         # Remove silent chunks
         chunks = [
+
             c for c in chunks
             if np.max(np.abs(c)) >= 0.01
         ]
 
         all_chunks.extend(chunks)
 
-    print(f"  Total valid chunks: {len(all_chunks)}")
+    print(
+        f"  Total valid chunks: {len(all_chunks)}"
+    )
 
     # =====================================
     # Split BEFORE augmentation
     # =====================================
-    indices = list(range(len(all_chunks)))
+    indices = list(
+        range(len(all_chunks))
+    )
 
     train_idx, temp_idx = train_test_split(
         indices,
@@ -247,12 +295,14 @@ def process_speaker(speaker_name):
     }
 
     # =====================================
-    # Generate spectrograms
+    # Generate spectrogram images
     # =====================================
     for split_name, split_indices in [
+
         ("train", train_idx),
         ("val", val_idx),
         ("test", test_idx)
+
     ]:
 
         out_dir = os.path.join(
@@ -261,14 +311,20 @@ def process_speaker(speaker_name):
             speaker_name
         )
 
-        os.makedirs(out_dir, exist_ok=True)
+        os.makedirs(
+            out_dir,
+            exist_ok=True
+        )
 
         for idx in split_indices:
 
             chunk = all_chunks[idx]
 
             if split_name == "train":
-                versions = augment_audio(chunk, sr)
+                versions = augment_audio(
+                    chunk,
+                    sr
+                )
             else:
                 versions = [chunk]
 
@@ -279,16 +335,19 @@ def process_speaker(speaker_name):
                 if len(aug_chunk) < chunk_samples:
                     continue
 
-                spec = chunk_to_spectrogram(
+                mel_db = chunk_to_mel(
                     aug_chunk
                 )
 
                 out_path = os.path.join(
                     out_dir,
-                    f"chunk_{idx:05d}_aug{aug_idx}.npy"
+                    f"chunk_{idx:05d}_aug{aug_idx}.png"
                 )
 
-                np.save(out_path, spec)
+                save_spectrogram_image(
+                    mel_db,
+                    out_path
+                )
 
                 counts[split_name] += 1
 
@@ -297,7 +356,6 @@ def process_speaker(speaker_name):
         f"Val: {counts['val']} | "
         f"Test: {counts['test']}"
     )
-
 
 # =========================================
 # Clear old folders
@@ -309,15 +367,17 @@ if os.path.exists(OUTPUT_DIR):
 if os.path.exists(TEMP_WAV_DIR):
     shutil.rmtree(TEMP_WAV_DIR)
 
-os.makedirs(TEMP_WAV_DIR, exist_ok=True)
-
+os.makedirs(
+    TEMP_WAV_DIR,
+    exist_ok=True
+)
 
 # =========================================
 # Process speakers
 # =========================================
 for speaker in [
     "ahmed",
-    "zoha",
+    "zoha"
 ]:
     process_speaker(speaker)
 
