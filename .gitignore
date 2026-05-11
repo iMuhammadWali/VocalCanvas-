@@ -1,9 +1,9 @@
 # Audio files
-voices/
-*.wav
-*.mp3
-*.webm
-*.m4a
+# voices/
+# *.wav
+# *.mp3
+# *.webm
+# *.m4a
 
 voices_depreciated/
 *.wav
