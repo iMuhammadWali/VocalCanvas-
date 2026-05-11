@@ -2,18 +2,13 @@ import yt_dlp
 import os
 
 downloads = [
-    # 1st
     # {"url": "https://youtu.be/vASaBrY5PMg?si=1IXcWDE06BWwhkfV", "name": "kenjiro_tsuda"},
-    # 2nd
     # {"url": "https://youtu.be/X2V4p-R4Qfo?si=uqvO7o_VK3gpGjfF", "name": "kenjiro_tsuda"},
-    {"url": "https://youtu.be/zD3vxXyvOQk?si=RHfrcqZpCfEW2Auy", "name": "kenjiro_tsuda"},
-
-    
+    # {"url": "https://youtu.be/zD3vxXyvOQk?si=RHfrcqZpCfEW2Auy", "name": "kenjiro_tsuda"},
     # {"url": "https://youtu.be/aH_irEzBOOI?si=56DkgTUatNgbqQPm", "name": "megumi_hayashibara"},
     # {"url": "https://youtu.be/iR3sfo-KtoI?si=VRRZGFbDsKipS_5k", "name": "megumi_hayashibara"},
-
-
     # {"url": "https://youtu.be/c2FalYYVDaQ?si=IB_wLnjiuzO-lONP", "name": "abi"}
+    {"url": "https://www.youtube.com/watch?v=37XpdeYRr7A", "name": "abi"}
    ]
 
 for item in downloads:
