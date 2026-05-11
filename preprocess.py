@@ -349,6 +349,7 @@ os.makedirs(
 # Process speakers
 # =========================================
 for speaker in [
+    "abi",
     "ahmed",
     "zoha"
 ]:
